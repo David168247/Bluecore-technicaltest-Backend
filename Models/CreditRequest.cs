@@ -1,5 +1,5 @@
 ﻿using BluecoreApi.Enums;
-namespace Bluecore.Models;
+namespace BluecoreApi.Models;
 
 public class CreditRequest
 {
