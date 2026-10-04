@@ -14,7 +14,7 @@ namespace BluecoreApi.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("esquema_c");
-
+            modelBuilder.Entity<CreditRequest>().ToTable("credit_cases");
             base.OnModelCreating(modelBuilder);
         }
     }
