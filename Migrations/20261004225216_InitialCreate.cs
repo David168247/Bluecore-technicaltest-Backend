@@ -16,7 +16,7 @@ namespace BluecoreApi.Migrations
                 name: "esquema_c");
 
             migrationBuilder.CreateTable(
-                name: "CreditRequests",
+                name: "credit_cases",
                 schema: "esquema_c",
                 columns: table => new
                 {
@@ -32,7 +32,7 @@ namespace BluecoreApi.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CreditRequests", x => x.Id);
+                    table.PrimaryKey("PK_credit_cases", x => x.Id);
                 });
         }
 
@@ -40,7 +40,7 @@ namespace BluecoreApi.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "CreditRequests",
+                name: "credit_cases",
                 schema: "esquema_c");
         }
     }

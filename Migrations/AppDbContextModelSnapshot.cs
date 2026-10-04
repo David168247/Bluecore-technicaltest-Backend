@@ -55,7 +55,7 @@ namespace BluecoreApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CreditRequests", "esquema_c");
+                    b.ToTable("credit_cases", "esquema_c");
                 });
 #pragma warning restore 612, 618
         }

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BluecoreApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261004035230_InitialCreate")]
+    [Migration("20261004225216_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -58,7 +58,7 @@ namespace BluecoreApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CreditRequests", "esquema_c");
+                    b.ToTable("credit_cases", "esquema_c");
                 });
 #pragma warning restore 612, 618
         }
