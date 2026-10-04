@@ -1,6 +1,7 @@
 using BluecoreApi.Data;
 using BluecoreApi.Services.Implementations;
 using BluecoreApi.Services.Interfaces;
+using BluecoreApi.Middleware;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +39,8 @@ builder.Services.AddScoped<
     CreditRequestService>();
 
 var app = builder.Build();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 
 // OpenAPI solamente en desarrollo
 if (app.Environment.IsDevelopment())
