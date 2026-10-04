@@ -1,0 +1,6 @@
+@BluecoreApi_HostAddress = http://localhost:5171
+
+GET {{BluecoreApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
