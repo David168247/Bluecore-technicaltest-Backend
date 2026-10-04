@@ -1,6 +1,7 @@
 using BluecoreApi.Data;
+using BluecoreApi.Services.Implementations;
+using BluecoreApi.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,32 +12,34 @@ var connectionString =
 
 if (string.IsNullOrWhiteSpace(connectionString))
 {
-    throw new InvalidOperationException(
-        "ConnectionStrings:DefaultConnection is not configured.");
+    throw new InvalidOperationException( "ConnectionStrings:DefaultConnection is not configured.");
 }
 
+// PostgreSQL + Entity Framework
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(
         connectionString,
         npgsqlOptions =>
         {
-            npgsqlOptions.MigrationsHistoryTable(
-                "__EFMigrationsHistory",
-                DatabaseSchema
-            );
+            npgsqlOptions.MigrationsHistoryTable( "__EFMigrationsHistory", DatabaseSchema );
         });
 });
 
-// Add services to the container.
-
+// Controllers
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+// OpenAPI
 builder.Services.AddOpenApi();
+
+// Dependency Injection
+builder.Services.AddScoped<
+    ICreditRequestService,
+    CreditRequestService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// OpenAPI solamente en desarrollo
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
