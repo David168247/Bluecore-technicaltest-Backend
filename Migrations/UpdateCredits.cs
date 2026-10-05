@@ -4,10 +4,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace BluecoreApi.Migrations
 {
-    /// <inheritdoc />
-    public partial class RenameCreditCaseColumnsToSnakeCase : Migration
+    public partial class UpdateCredits : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql("""ALTER TABLE esquema_c.credit_cases RENAME CONSTRAINT "PK_credit_cases" TO pk_credit_cases;""");

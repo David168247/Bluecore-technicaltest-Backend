@@ -71,8 +71,6 @@ public sealed class CreditRequestServiceTests
         }
     }
 
-    // Validation must reject invalid requests before opening a database connection.
-    private static AppDbContext CreateContext() =>
-        new(new DbContextOptionsBuilder<AppDbContext>()
+    private static AppDbContext CreateContext() => new(new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql("Host=localhost;Database=unused;Username=unused").Options);
 }

@@ -2,7 +2,7 @@
 
 ## Estado actual
 
-El backend gestiona solicitudes de crédito con ASP.NET Core 10, Entity Framework Core y PostgreSQL. Incluye registro de cuentas persistidas, inicio de sesión y autenticación JWT. Las solicitudes de crédito requieren un token válido. La suite actual contiene exactamente dos tests unitarios, dedicados al monto y al plazo.
+El backend gestiona solicitudes de crédito con ASP.NET Core 10, Entity Framework Core y PostgreSQL. Incluye registro de cuentas persistidas, inicio de sesión y autenticación JWT. Las solicitudes de crédito requieren un token válido. La suite actual contiene tres tests unitarios, dedicados al monto, al plazo y al comentario obligatorio al cambiar de estado.
 
 Este documento explica los cambios realizados sobre el proyecto existente y cómo funcionan sus componentes. README.md contiene las instrucciones para configurarlo y ejecutarlo.
 
@@ -19,7 +19,7 @@ Se conserva PostgreSQL por la elección explícita de este proyecto. El document
 | Aprobar o rechazar con comentario | PATCH /api/credit-requests/{id}/status |
 | Validar monto y plazo | DataAnnotations y validación en el servicio |
 | Errores HTTP legibles | ProblemDetails y middleware global |
-| Dos tests unitarios | CreditRequestServiceTests |
+| Mínimo dos tests unitarios | Tres tests en CreditRequestServiceTests y CreditStatusServiceTests |
 | Login y token JWT | POST /api/auth/login |
 | Instrucciones de ejecución | README.md |
 
@@ -65,7 +65,7 @@ La traducción cambió los identificadores de los commits, pero conservó sus á
 
 La primera implementación añadió una suite más amplia. Tras revisar la referencia y la preferencia del usuario, se retiraron esas pruebas y se dejaron exactamente dos tests. También se eliminó la dependencia Microsoft.AspNetCore.Mvc.Testing, que solo se necesitaba para las pruebas HTTP retiradas.
 
-Las comprobaciones puntuales posteriores no se agregaron a la suite automatizada. Actualmente dotnet test ejecuta dos tests, no 37.
+Las comprobaciones puntuales posteriores no se agregaron a la suite automatizada. Posteriormente se añadió, a petición del usuario, un tercer test para el comentario obligatorio al aprobar o rechazar. Actualmente dotnet test ejecuta tres tests.
 
 ## Componentes principales
 
@@ -182,9 +182,11 @@ Contiene id, applicant_id, amount, term_months, status, comment, created_at y up
 
 ### Migraciones del proyecto
 
-1. 20261004225216_InitialCreate.
-2. 20261005001213_AddUserAccounts.
-3. 20261005002912_RenameCreditCaseColumnsToSnakeCase.
+1. InitialCreate.cs: esquema inicial de solicitudes de crédito.
+2. CreateUsers.cs: tabla de cuentas de usuario.
+3. UpdateCredits.cs: columnas de solicitudes de crédito en snake_case.
+
+Los archivos y clases tienen nombres cortos, sin prefijos de fechas. Cada archivo Designer conserva el atributo Migration con el identificador original aplicado para mantener la continuidad con PostgreSQL.
 
 El historial permanece en esquema_c.__EFMigrationsHistory. No se ejecutan migraciones automáticamente durante el arranque.
 
@@ -203,12 +205,16 @@ El historial permanece en esquema_c.__EFMigrationsHistory. No se ejecutan migrac
 
 Los errores usan application/problem+json. Las validaciones MVC incluyen errors. El middleware añade traceId a sus respuestas y conserva los detalles técnicos en los logs del servidor.
 
-## Los dos tests actuales
+## Los tres tests actuales
 
 CreditRequestServiceTests contiene:
 
 1. CreateAsync_RejectsAmountsOutsideAllowedRange: verifica el rechazo de 499.99 y 50000.01 antes de acceder a PostgreSQL, y la aceptación de 500 y 50000 en la validación.
 2. CreateAsync_RejectsTermsOutsideAllowedRange: verifica el rechazo de 5 y 61 meses antes de acceder a PostgreSQL, y la aceptación de 6 y 60 en la validación.
+
+CreditStatusServiceTests añade la tercera prueba:
+
+3. UpdateStatusAsync_RejectsMissingComment: verifica que Approved y Rejected rechacen un comentario nulo, vacío o compuesto solo por espacios antes de consultar la base de datos.
 
 No necesitan una base activa ni secretos. Cubren las reglas de negocio centrales de la prueba técnica. La suite actual no incluye pruebas automatizadas de JWT, registro, middleware ni flujo HTTP.
 

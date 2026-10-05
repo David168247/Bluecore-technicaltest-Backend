@@ -49,12 +49,14 @@ La fábrica de diseño de AppDbContext permite ejecutar herramientas EF sin conf
 Migraciones:
 
 1. InitialCreate: migración existente de credit_cases.
-2. AddUserAccounts: crea esquema_c.user_accounts, con UUID, usuario, correo, identificadores normalizados, password_hash y created_at.
-3. RenameCreditCaseColumnsToSnakeCase: renombra las columnas y la restricción primaria de credit_cases conservando datos y referencias. No elimina ni recrea la tabla. Los enums PostgreSQL preexistentes no se alteran.
+2. CreateUsers: crea esquema_c.user_accounts, con UUID, usuario, correo, identificadores normalizados, password_hash y created_at.
+3. UpdateCredits: renombra las columnas y la restricción primaria de credit_cases conservando datos y referencias. No elimina ni recrea la tabla. Los enums PostgreSQL preexistentes no se alteran.
 
 No ejecutar migraciones automáticamente al iniciar la API. Revisar el SQL para el despliegue con:
 
     dotnet ef migrations script 20261004225216_InitialCreate --idempotent --output migration.sql
+
+Los archivos se llaman InitialCreate.cs, CreateUsers.cs y UpdateCredits.cs, sin fechas en sus nombres. Los identificadores originales permanecen en los atributos Migration de los archivos Designer para conservar el historial aplicado; los renombrados no vuelven a ejecutar las migraciones.
 
 El historial existente conserva su nombre __EFMigrationsHistory para no romper la continuidad. Las tablas y columnas de negocio usan snake_case.
 
@@ -118,14 +120,14 @@ Archivos principales:
 - Services/Interfaces/IAuthenticationService.cs, IUserAccountRepository.cs, ITokenService.cs e ICreditRequestService.cs.
 - Controllers/AuthenticationController.cs y CreditRequestsController.cs.
 - Configuration/JwtOptions.cs y AuthenticationConfiguration.cs; Middleware/ExceptionHandlingMiddleware.cs; Program.cs.
-- Migrations/AddUserAccounts y RenameCreditCaseColumnsToSnakeCase, con sus snapshots generados.
-- Tests/CreditRequestServiceTests.cs contiene exactamente dos tests unitarios: límites del monto ($500–$50,000) y del plazo (6–60 meses). Verifican el rechazo de valores fuera de rango antes de acceder a la base y la aceptación de los valores límite en la validación.
+- Migrations/CreateUsers y UpdateCredits, con sus snapshots generados.
+- Tests/CreditRequestServiceTests.cs contiene los tests de límites del monto ($500–$50,000) y del plazo (6–60 meses). Tests/CreditStatusServiceTests.cs verifica que aprobar o rechazar requiera un comentario. En total hay tres tests unitarios.
 
-Los dos tests unitarios no requieren una conexión PostgreSQL activa ni secretos reales.
+Los tres tests unitarios no requieren una conexión PostgreSQL activa ni secretos reales.
 
 ## Alcance de la prueba técnica
 
-El flujo base cubre crear solicitudes, listar y filtrar por estado, y aprobar o rechazar con comentario. Las validaciones requeridas son monto entre $500 y $50,000 y plazo entre 6 y 60 meses. Se incluyen dos tests unitarios de esas reglas. La autenticación JWT corresponde al bonus del documento; se mantiene el registro persistido solicitado para este proyecto. PostgreSQL se conserva como la base elegida.
+El flujo base cubre crear solicitudes, listar y filtrar por estado, y aprobar o rechazar con comentario. Las validaciones requeridas son monto entre $500 y $50,000 y plazo entre 6 y 60 meses. Se incluyen tres tests unitarios de monto, plazo y comentario obligatorio. La autenticación JWT corresponde al bonus del documento; se mantiene el registro persistido solicitado para este proyecto. PostgreSQL se conserva como la base elegida.
 
 ## Alcance pendiente
 
