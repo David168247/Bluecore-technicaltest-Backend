@@ -12,6 +12,14 @@ public sealed class UserAccountRepository(AppDbContext context) : IUserAccountRe
         context.UserAccounts.AsNoTracking().AnyAsync(
             x => x.NormalizedUsername == normalizedUsername || x.NormalizedEmail == normalizedEmail, cancellationToken);
 
+    public Task<UserAccount?> FindByIdentifierAsync(string normalizedIdentifier, CancellationToken cancellationToken) =>
+        context.UserAccounts.AsNoTracking().SingleOrDefaultAsync(
+            x => x.NormalizedUsername == normalizedIdentifier || x.NormalizedEmail == normalizedIdentifier, cancellationToken);
+
+    public Task UpdatePasswordHashAsync(Guid id, string passwordHash, CancellationToken cancellationToken) =>
+        context.UserAccounts.Where(x => x.Id == id).ExecuteUpdateAsync(
+            setters => setters.SetProperty(x => x.PasswordHash, passwordHash), cancellationToken);
+
     public async Task AddAsync(UserAccount account, CancellationToken cancellationToken)
     {
         context.UserAccounts.Add(account);

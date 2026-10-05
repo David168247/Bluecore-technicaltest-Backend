@@ -8,8 +8,28 @@ namespace BluecoreApi.Services.Implementations;
 
 public sealed class AuthenticationService(
     IUserAccountRepository repository,
-    IPasswordHasher<UserAccount> passwordHasher) : IAuthenticationService
+    IPasswordHasher<UserAccount> passwordHasher,
+    ITokenService tokenService) : IAuthenticationService
 {
+    // Equal-cost password verification for unknown accounts avoids a cheap username enumeration path.
+    private static readonly UserAccount DummyAccount = new();
+    private static readonly string DummyPasswordHash =
+        new PasswordHasher<UserAccount>().HashPassword(DummyAccount, Guid.NewGuid().ToString());
+
+    public async Task<AuthenticationResponseDto> LoginAsync(LoginDto dto, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        Validator.ValidateObject(dto, new ValidationContext(dto), validateAllProperties: true);
+        var account = await repository.FindByIdentifierAsync(dto.UsernameOrEmail.Trim().ToUpperInvariant(), cancellationToken);
+        var verification = passwordHasher.VerifyHashedPassword(
+            account ?? DummyAccount, account?.PasswordHash ?? DummyPasswordHash, dto.Password);
+        if (account is null || verification == PasswordVerificationResult.Failed)
+            throw new InvalidCredentialsException();
+        if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+            await repository.UpdatePasswordHashAsync(account.Id, passwordHasher.HashPassword(account, dto.Password), cancellationToken);
+        return tokenService.CreateToken(account);
+    }
+
     public async Task<UserAccountResponseDto> RegisterAsync(RegisterUserDto dto, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(dto);
