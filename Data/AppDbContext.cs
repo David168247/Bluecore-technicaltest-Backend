@@ -12,7 +12,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.HasDefaultSchema("esquema_c");
-        modelBuilder.Entity<CreditRequest>().ToTable("credit_cases");
+
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }
