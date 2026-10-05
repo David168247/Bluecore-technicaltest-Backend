@@ -61,7 +61,10 @@ public sealed class CreditRequestService(AppDbContext context) : ICreditRequestS
 
     private static CreditStatus ParseStatus(string status)
     {
-        if (!Enum.TryParse<CreditStatus>(status, true, out var parsedStatus) || !Enum.IsDefined(parsedStatus))
+        var normalizedStatus = status.Trim();
+        if (!Enum.TryParse<CreditStatus>(normalizedStatus, true, out var parsedStatus)
+            || !Enum.IsDefined(parsedStatus)
+            || !string.Equals(Enum.GetName(parsedStatus), normalizedStatus, StringComparison.OrdinalIgnoreCase))
             throw new ValidationException("El estado enviado no es válido.");
         return parsedStatus;
     }
