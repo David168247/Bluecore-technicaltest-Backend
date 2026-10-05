@@ -5,8 +5,8 @@ Backend para registrar usuarios, iniciar sesión y gestionar solicitudes de cré
 ## Requisitos
 
 - .NET SDK 10.
-- PostgreSQL y una base de datos creada.
-- Postman o un cliente HTTP para probar los endpoints.
+- PostgreSQL.
+- Postman.
 
 ## Descargar el proyecto
 
