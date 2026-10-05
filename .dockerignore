@@ -1,0 +1,11 @@
+bin/
+obj/
+Tests/
+.git/
+.vs/
+.env
+.env.*
+*.pfx
+*.p12
+*.log
+appsettings.Development.json
