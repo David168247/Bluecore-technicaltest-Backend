@@ -2,6 +2,8 @@
 
 API ASP.NET Core 10 con EF Core y PostgreSQL. Toda tabla de aplicación y el historial de migraciones pertenecen exclusivamente a esquema_c.
 
+La explicación del desarrollo, los fixes realizados y el alcance pendiente está en [DOCUMENTACION_DESARROLLO.md](DOCUMENTACION_DESARROLLO.md).
+
 ## Configuración local
 
 Requisitos: .NET SDK 10, dotnet-ef 10 y una conexión PostgreSQL con acceso a esquema_c.
@@ -66,7 +68,7 @@ POST /api/auth/register, acceso público. Cuerpo:
       "password": "<contraseña>"
     }
 
-Devuelve 201 con id, username, email y createdAt. Nunca devuelve el hash ni la contraseña. Usuario de 3–50 caracteres ASCII: letras, números, punto, guion y guion bajo. Correo válido de hasta 254 caracteres. Contraseña de 12–128 caracteres; admite frases largas y no se recorta. Correo y usuario se comparan sin distinguir mayúsculas mediante valores normalizados y tienen índices únicos independientes. Los duplicados, incluso ante una carrera de inserción, devuelven 409.
+Devuelve 201 con id, username, email y createdAt. Nunca devuelve el hash ni la contraseña. Usuario de 3–50 caracteres ASCII: letras, números, punto, guion y guion bajo. Correo válido de hasta 250 caracteres. Contraseña de 12–120 caracteres; admite frases largas y no se recorta. Correo y usuario se comparan sin distinguir mayúsculas mediante valores normalizados y tienen índices únicos independientes. Los duplicados, incluso ante una carrera de inserción, devuelven 409.
 
 POST /api/auth/login, acceso público. Cuerpo:
 
@@ -75,7 +77,7 @@ POST /api/auth/login, acceso público. Cuerpo:
       "password": "<contraseña>"
     }
 
-Devuelve 200 con accessToken, tokenType: Bearer, expiresAt en UTC y user. Credenciales incorrectas o usuario inexistente devuelven el mismo 401. Un login válido actualiza hashes antiguos cuando PasswordHasher indica que lo requieren.
+El login admite hasta 250 caracteres para usernameOrEmail y hasta 120 para password. Devuelve 200 con accessToken, tokenType: Bearer, expiresAt en UTC y user. Credenciales incorrectas o usuario inexistente devuelven el mismo 401. Un login válido actualiza hashes antiguos cuando PasswordHasher indica que lo requieren.
 
 Enviar el token en solicitudes protegidas:
 
@@ -117,9 +119,13 @@ Archivos principales:
 - Controllers/AuthenticationController.cs y CreditRequestsController.cs.
 - Configuration/JwtOptions.cs y AuthenticationConfiguration.cs; Middleware/ExceptionHandlingMiddleware.cs; Program.cs.
 - Migrations/AddUserAccounts y RenameCreditCaseColumnsToSnakeCase, con sus snapshots generados.
-- Tests/ contiene tests unitarios de servicios, configuración, JWT, validación de créditos, mapeos y errores, y pruebas HTTP en memoria de registro/login, autorización y límites.
+- Tests/CreditRequestServiceTests.cs contiene exactamente dos tests unitarios: límites del monto ($500–$50,000) y del plazo (6–60 meses). Verifican el rechazo de valores fuera de rango antes de acceder a la base y la aceptación de los valores límite en la validación.
 
-Los tests automatizados no requieren PostgreSQL ni secretos reales. Usan claves JWT aleatorias efímeras y datos de contraseña exclusivamente ficticios.
+Los dos tests unitarios no requieren una conexión PostgreSQL activa ni secretos reales.
+
+## Alcance de la prueba técnica
+
+El flujo base cubre crear solicitudes, listar y filtrar por estado, y aprobar o rechazar con comentario. Las validaciones requeridas son monto entre $500 y $50,000 y plazo entre 6 y 60 meses. Se incluyen dos tests unitarios de esas reglas. La autenticación JWT corresponde al bonus del documento; se mantiene el registro persistido solicitado para este proyecto. PostgreSQL se conserva como la base elegida.
 
 ## Alcance pendiente
 
