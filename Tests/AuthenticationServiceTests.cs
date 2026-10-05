@@ -65,6 +65,23 @@ public sealed class AuthenticationServiceTests
         Assert.Equal("Credenciales inválidas.", exception.Message);
     }
 
+    [Fact]
+    public async Task Login_UpgradesOlderPasswordHash()
+    {
+        var repository = new FakeRepository();
+        var oldHasher = new PasswordHasher<UserAccount>(Microsoft.Extensions.Options.Options.Create(
+            new PasswordHasherOptions { IterationCount = 1000 }));
+        var account = new UserAccount { Username = "older", Email = "older@example.com", NormalizedUsername = "OLDER", NormalizedEmail = "OLDER@EXAMPLE.COM" };
+        account.PasswordHash = oldHasher.HashPassword(account, "long-test-password");
+        repository.Accounts.Add(account);
+        var previousHash = account.PasswordHash;
+        var service = new AuthenticationService(repository, new PasswordHasher<UserAccount>(), TestTokenService());
+        await service.LoginAsync(new() { UsernameOrEmail = "older", Password = "long-test-password" });
+        Assert.NotEqual(previousHash, account.PasswordHash);
+        Assert.Equal(PasswordVerificationResult.Success,
+            new PasswordHasher<UserAccount>().VerifyHashedPassword(account, account.PasswordHash, "long-test-password"));
+    }
+
     private static RegisterUserDto ValidRegistration() =>
         new() { Username = "David", Email = "David@example.com", Password = "long-test-password" };
 

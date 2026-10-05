@@ -76,6 +76,18 @@ public sealed class AuthenticationApiTests
     }
 
     [Fact]
+    public async Task AuthenticationEndpoints_LimitRepeatedAttempts()
+    {
+        await using var factory = new ApiFactory();
+        using var client = factory.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        for (var attempt = 0; attempt < 10; attempt++)
+            Assert.Equal(HttpStatusCode.BadRequest,
+                (await client.PostAsJsonAsync("/api/auth/login", new LoginDto())).StatusCode);
+        var rejected = await client.PostAsJsonAsync("/api/auth/login", new LoginDto());
+        Assert.Equal(HttpStatusCode.TooManyRequests, rejected.StatusCode);
+        Assert.Equal("application/problem+json", rejected.Content.Headers.ContentType!.MediaType);
+    }
+    [Fact]
     public async Task InvalidRegistration_ReturnsValidationProblem()
     {
         await using var factory = new ApiFactory();
