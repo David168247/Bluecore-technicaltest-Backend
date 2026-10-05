@@ -1,21 +1,18 @@
-﻿using BluecoreApi.Models;
+using BluecoreApi.Models;
 using Microsoft.EntityFrameworkCore;
-namespace BluecoreApi.Data
+
+namespace BluecoreApi.Data;
+
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<CreditRequest> CreditRequests => Set<CreditRequest>();
+    public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
 
-    public class AppDbContext : DbContext
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-
-        }
-        public DbSet<CreditRequest> CreditRequests => Set<CreditRequest>();
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.HasDefaultSchema("esquema_c");
-            modelBuilder.Entity<CreditRequest>().ToTable("credit_cases");
-            base.OnModelCreating(modelBuilder);
-        }
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.HasDefaultSchema("esquema_c");
+        modelBuilder.Entity<CreditRequest>().ToTable("credit_cases");
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }
