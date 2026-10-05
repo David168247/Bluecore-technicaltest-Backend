@@ -25,7 +25,9 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
                 InvalidCredentialsException => (401, "Credenciales inválidas."),
                 ValidationException => (400, exception.Message),
                 ArgumentException => (400, "Los datos enviados no son válidos."),
-                DbUpdateException or DbException => (503, "El servicio de datos no está disponible."),
+                DbUpdateException or DbException
+                    or InvalidOperationException { InnerException: DbException } =>
+                    (503, "El servicio de datos no está disponible."),
                 _ => (500, "Ocurrió un error interno en el servidor.")
             };
             if (status >= 500) logger.LogError(exception, "Request failed with HTTP {StatusCode}.", status);
