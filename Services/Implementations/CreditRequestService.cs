@@ -1,4 +1,4 @@
-﻿using BluecoreApi.Data;
+using BluecoreApi.Data;
 using BluecoreApi.DTOs;
 using BluecoreApi.Enums;
 using BluecoreApi.Models;
@@ -16,7 +16,7 @@ public class CreditRequestService : ICreditRequestService
         _context = context;
     }
 
-    public async Task<CreditRequest> CreateAsync(CreateCreditRequestDto dto)
+    public async Task<CreditRequest> CreateAsync(CreateCreditRequestDto dto, CancellationToken cancellationToken = default)
     {
         var creditRequest = new CreditRequest
         {
@@ -30,12 +30,12 @@ public class CreditRequestService : ICreditRequestService
 
         _context.CreditRequests.Add(creditRequest);
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return creditRequest;
     }
 
-    public async Task<IEnumerable<CreditRequest>> GetAllAsync(string? status)
+    public async Task<IEnumerable<CreditRequest>> GetAllAsync(string? status, CancellationToken cancellationToken = default)
     {
         var query = _context.CreditRequests
             .AsNoTracking()
@@ -46,7 +46,7 @@ public class CreditRequestService : ICreditRequestService
             if (!Enum.TryParse<CreditStatus>(
                     status,
                     true,
-                    out var parsedStatus))
+                    out var parsedStatus) || !Enum.IsDefined(parsedStatus))
             {
                 throw new ArgumentException(
                     "El estado enviado no es válido.");
@@ -57,23 +57,23 @@ public class CreditRequestService : ICreditRequestService
 
         return await query
             .OrderByDescending(x => x.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<CreditRequest?> GetByIdAsync(int id)
+    public async Task<CreditRequest?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await _context.CreditRequests
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
     public async Task<CreditRequest?> UpdateStatusAsync(
         int id,
-        UpdateCreditStatusDto dto)
+        UpdateCreditStatusDto dto, CancellationToken cancellationToken = default)
     {
         var creditRequest =
             await _context.CreditRequests
-                .FirstOrDefaultAsync(x => x.Id == id);
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (creditRequest is null)
         {
@@ -83,7 +83,7 @@ public class CreditRequestService : ICreditRequestService
         if (!Enum.TryParse<CreditStatus>(
                 dto.Status,
                 true,
-                out var newStatus))
+                out var newStatus) || !Enum.IsDefined(newStatus))
         {
             throw new ArgumentException(
                 "El estado enviado no es válido.");
@@ -99,7 +99,7 @@ public class CreditRequestService : ICreditRequestService
         creditRequest.Comment = dto.Comment;
         creditRequest.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return creditRequest;
     }

@@ -1,63 +1,53 @@
-﻿using System.Net;
-using System.Text.Json;
-
+using System.ComponentModel.DataAnnotations;
+using System.Data.Common;
+using BluecoreApi.Exceptions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 namespace BluecoreApi.Middleware;
 
-public class ExceptionHandlingMiddleware
+public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-
-    public ExceptionHandlingMiddleware(
-        RequestDelegate next,
-        ILogger<ExceptionHandlingMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            await _next(context);
+            await next(context);
         }
-        catch (ArgumentException ex)
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
         {
-            _logger.LogWarning(ex, "Business validation error.");
-
-            await WriteErrorResponse(
-                context,
-                HttpStatusCode.BadRequest,
-                ex.Message);
+            // The client disconnected; do not attempt to write a response.
         }
-        catch (Exception ex)
+        catch (Exception exception) when (!context.Response.HasStarted)
         {
-            _logger.LogError(ex, "Unexpected application error.");
-
-            await WriteErrorResponse(
-                context,
-                HttpStatusCode.InternalServerError,
-                "Ocurrió un error interno en el servidor.");
+            var (status, detail) = exception switch
+            {
+                DuplicateUserAccountException => (409, "El usuario o correo ya está registrado."),
+                InvalidCredentialsException => (401, "Credenciales inválidas."),
+                ValidationException => (400, exception.Message),
+                ArgumentException => (400, "Los datos enviados no son válidos."),
+                DbUpdateException or DbException => (503, "El servicio de datos no está disponible."),
+                _ => (500, "Ocurrió un error interno en el servidor.")
+            };
+            if (status >= 500) logger.LogError(exception, "Request failed with HTTP {StatusCode}.", status);
+            else logger.LogWarning("Request rejected with HTTP {StatusCode}.", status);
+            context.Response.Clear();
+            if (status == 401) context.Response.Headers.WWWAuthenticate = "Bearer";
+            await WriteProblemAsync(context, status, detail);
         }
     }
 
-    private static async Task WriteErrorResponse(
-        HttpContext context,
-        HttpStatusCode statusCode,
-        string message)
+    public static Task WriteProblemAsync(HttpContext context, int status, string detail)
     {
-        context.Response.StatusCode = (int)statusCode;
-        context.Response.ContentType = "application/json";
-
-        var response = new
+        context.Response.StatusCode = status;
+        var problem = new ProblemDetails
         {
-            statusCode = (int)statusCode,
-            message
+            Status = status,
+            Title = Microsoft.AspNetCore.WebUtilities.ReasonPhrases.GetReasonPhrase(status),
+            Detail = detail,
+            Instance = context.Request.Path
         };
-
-        var json = JsonSerializer.Serialize(response);
-
-        await context.Response.WriteAsync(json);
+        problem.Extensions["traceId"] = context.TraceIdentifier;
+        return context.Response.WriteAsJsonAsync(problem, options: (System.Text.Json.JsonSerializerOptions?)null, contentType: "application/problem+json",
+            cancellationToken: context.RequestAborted);
     }
 }
